@@ -1,6 +1,8 @@
 # Welcome To This Telegram-Push-Bot 
 
 ------
+Add tencent-scf support.
+------
 
 ## Use Guide
 
