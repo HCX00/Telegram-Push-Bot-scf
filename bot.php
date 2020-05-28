@@ -1,4 +1,5 @@
 <?php
+
 function go_curl($url, $type, $data = false, &$err_msg = null, $timeout = 20, $cert_info = array(),$proxy = "",$cookie = "recookie.txt"){
 	$type = strtoupper($type);
 	if ($type == 'GET' && is_array($data)) {
@@ -68,6 +69,7 @@ function go_curl($url, $type, $data = false, &$err_msg = null, $timeout = 20, $c
 	}
 	return $response;
 }
+
 function authcode($string,$operation='DECODE',$key='',$expiry=0){
 	$ckey_length=4;
 	$key=md5($key ? $key:"hcaiyue.top");
@@ -108,28 +110,56 @@ function authcode($string,$operation='DECODE',$key='',$expiry=0){
 		return $keyc.str_replace('=','',base64_encode($result));
 	}
 }
+
 function sendmessage($data){
-	go_curl("https://api.telegram.org/bot[token]/sendMessage","POST",$data);
+	go_curl("https://api.telegram.org/bot[token]","POST",$data);
 }
-//file_put_contents("text.txt",file_get_contents("php://input")."\n\n\n",FILE_APPEND); //debug output
-if (isset($_POST["method"]) && $_POST["method"] == "send"){
-	$data = [];
-	$data["chat_id"] = authcode($_POST["sckey"]);
-	$data["text"] = $_POST["content"];
-	sendmessage($data);
-	return;
+
+function form_data_to_array($raw_post_array){
+    $raw_post_array = explode('&', $raw_post_array);
+    $myPost = array();
+    foreach ($raw_post_array as $keyval) {
+        $keyval = explode('=', $keyval);
+        if (count($keyval) == 2) {
+            // 转换urlencode的+为%2B
+            if ($keyval[0] === 'payment_date') {
+                if (substr_count($keyval[1], '+') === 1) {
+                    $keyval[1] = str_replace('+', '%2B', $keyval[1]);
+                }
+            }
+            $myPost[$keyval[0]] = urldecode($keyval[1]);
+        }
+    }
 }
-$a = json_decode(file_get_contents("php://input"),true);
-if ($a["message"]["text"] == "/start"){
-    $data = [];
-    $data["chat_id"] = $a["message"]["chat"]["id"];
-    $data["text"] = authcode($a["message"]["chat"]["id"],"ENCODE");
-    sendmessage($data);
+
+function main_handler($event, $context) {
+    //file_put_contents("text.txt",file_get_contents("php://input")."\n\n\n",FILE_APPEND); //debug output
+    // print_r($event);
+    // print_r($context);
+
+    parse_str($event->body,$post_body);
+    if (isset($post_body["method"]) && $post_body["method"] == "send"){
+        $data = [];
+        $data["chat_id"] = authcode($post_body["sckey"]);
+        $data["text"] = $post_body["content"];
+        sendmessage($data);
+        return;
+    }
+
+    $a = json_decode($event->body,true);
+
+    if ($a["message"]["text"] == "/start"){
+        $data = [];
+        $data["chat_id"] = $a["message"]["chat"]["id"];
+        $data["text"] = authcode($a["message"]["chat"]["id"],"ENCODE");
+        sendmessage($data);
+    }
+    if ($a["channel_post"]["text"] == "/start"){
+        $data = [];
+        $data["chat_id"] = $a["channel_post"]["chat"]["id"];
+        $data["text"] = authcode($a["channel_post"]["chat"]["id"],"ENCODE");
+        sendmessage($data);
+    }
 }
-if ($a["channel_post"]["text"] == "/start"){
-    $data = [];
-    $data["chat_id"] = $a["channel_post"]["chat"]["id"];
-    $data["text"] = authcode($a["channel_post"]["chat"]["id"],"ENCODE");
-    sendmessage($data);
-}
+
 ?>
