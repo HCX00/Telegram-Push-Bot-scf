@@ -133,7 +133,7 @@ function form_data_to_array($raw_post_array){
 }
 
 function main_handler($event, $context) {
-    //file_put_contents("text.txt",file_get_contents("php://input")."\n\n\n",FILE_APPEND); //debug output
+    // file_put_contents("text.txt",file_get_contents("php://input")."\n\n\n",FILE_APPEND); //debug output
     // print_r($event);
     // print_r($context);
 
